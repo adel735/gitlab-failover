@@ -1,0 +1,61 @@
+---
+- hosts: primary
+  become: true
+  tasks:
+
+    - name: Download GitLab Runner script
+      get_url:
+        url: https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh
+        dest: /tmp/gitlab-runner.sh
+        mode: 0600  
+
+    - name: Set permissions for GitLab Runner script 
+      file:
+        path: /tmp/gitlab-runner.sh
+        mode: 0444  
+
+    - name: Run GitLab Runner script
+      script:
+        cmd: /tmp/gitlab-runner.sh
+    - name: Install GitLab Runner package
+      yum:
+        name: gitlab-runner
+        state: latest
+
+    - name: Enable Podman system service
+      service:
+        name: podman.socket  
+        enabled: yes
+
+    - name: Configure GitLab Runner (using provided token)
+      copy:
+        dest: /etc/gitlab-runner/config.toml
+        content: |
+          concurrent = 1
+          [[runners]]
+            name = "instance_name"
+            url = "gitlab_url"
+            token = "authorization_token"
+            limit = 0
+            executor = "docker"
+            builds_dir = ""
+            [runners.docker]
+              host = "hostname_url"
+              image = "registry.gitlab.com/rhcontainerbot/pkg-builder"
+              privileged = false
+              disable_cache = false
+              cache_dir = ""
+          [[runners]]
+              environment = ["FF_NETWORK_PER_BUILD=1"]
+              [runners.docker]
+              host = "unix:///run/user/1001/podman/podman.sock"
+          [session_server]
+               listen_address = "listen_address:3000"
+
+      vars:
+        gitlab_runner_token: "glrt-pKiz9d46i61MyXXire8_" 
+
+    - name: Restart GitLab Runner service
+      service:
+        name: gitlab-runner  # Restart GitLab Runner service name
+        state: restarted

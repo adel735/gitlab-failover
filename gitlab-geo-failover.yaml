@@ -1,0 +1,24 @@
+---
+- name: GitLab Geo Failover - Put Primary in Maintenance Mode
+  hosts: primary  
+  tasks:
+    - name: Stop GitLab services (modify as needed for your setup)
+      command: gitlab-ctl stop
+
+    - name: Set GitLab to maintenance mode
+      command: gitlab-ctl set-maintenance-mode on  
+
+- name: GitLab Geo Failover - Promote Secondary
+  hosts: secondary  
+  tasks:
+    - name: Promote secondary to primary 
+      command: gitlab-ctl geo promote
+
+- name: GitLab Geo Failover - Restart Services on New Primary
+  hosts: secondary
+
+    - name: Start GitLab services (modify as needed for your setup)
+      command: gitlab-ctl restart
+    - name: Set GitLab out of maintenance mode 
+      command: gitlab-ctl set-maintenance-mode off  
+
