@@ -1,27 +1,16 @@
 ---
 - hosts: primary
   become: true
-  tasks:
-
-    - name: Download GitLab Runner script
-      get_url:
-        url: https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh
-        dest: /tmp/gitlab-runner.sh
-        mode: 0600  
-
+  tasks: 
     - name: Set permissions for GitLab Runner script 
       file:
-        path: /tmp/gitlab-runner.sh
-        mode: 0444  
+        path: /tmp/gitlab-runner.deb
+        mode: 0644
 
-    - name: Run GitLab Runner script
-      script:
-        cmd: /tmp/gitlab-runner.sh
-    - name: Install GitLab Runner package
-      yum:
-        name: gitlab-runner
-        state: latest
-
+      - name: Install GitLab Runner package
+        package:
+          name: /tmp/gitlab-runner.deb
+          state: present
     - name: Enable Podman system service
       service:
         name: podman.socket  
